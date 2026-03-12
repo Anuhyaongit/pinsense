@@ -1,11 +1,6 @@
 from fastapi import FastAPI
+from .routers.embedding_router import router as embedding_router
 
-app = FastAPI(
-    title="PinSense Backend",
-    description="Backend API for visual embeddings, clustering, and recommendations",
-    version="0.1.0"
-)
+app = FastAPI()
 
-@app.get("/")
-def root():
-    return {"message": "PinSense backend is running!"}
+app.include_router(embedding_router, prefix="/api")
