@@ -1,16 +1,7 @@
-import torch
-import clip
-from PIL import Image
+from sentence_transformers import SentenceTransformer
 
-print("EmbeddingService loaded")
+model = SentenceTransformer("clip-ViT-B-32")
 
-class EmbeddingService:
-    def __init__(self):
-        self.device = "cuda" if torch.cuda.is_available() else "cpu"
-        self.model, self.preprocess = clip.load("ViT-B/32", device=self.device)
-
-    def get_embedding(self, image: Image.Image):
-        image_input = self.preprocess(image).unsqueeze(0).to(self.device)
-        with torch.no_grad():
-            embedding = self.model.encode_image(image_input)
-        return embedding.cpu().numpy().tolist()
+def generate_embedding(image):
+    embedding = model.encode(image)
+    return embedding.tolist()
