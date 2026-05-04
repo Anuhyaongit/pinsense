@@ -2,6 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from .routers.embedding_router import router as embedding_router
 from pydantic import BaseModel
+from app.utils.image_downloader import download_image
 
 app = FastAPI()
 
@@ -25,4 +26,9 @@ class PinRequest(BaseModel):
 @app.post("/api/submit-pin")
 def submit_pin(req: PinRequest):
     print("Received image:", req.image_url)
-    return {"status": "ok", "received": req.image_url}
+
+    try:
+        saved_path = download_image(req.image_url)
+        return {"status": "downloaded", "path": saved_path}
+    except Exception as e:
+        return {"status": "error", "message": str(e)}

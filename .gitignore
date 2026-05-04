@@ -1,2 +1,7 @@
 __pycache__/
 *.pyc
+
+downloads/
+logs/
+.DS_Store
+docs/
