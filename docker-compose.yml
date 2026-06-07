@@ -1,0 +1,86 @@
+# Docker Compose: Run backend + frontend together locally
+# Usage: docker-compose up
+# Access frontend: http://localhost:3000
+# Access backend API: http://localhost:8000
+
+version: '3.8'
+
+services:
+  # Backend Service
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: pinsense_backend
+    ports:
+      - "8000:8000"
+    environment:
+      # Add your environment variables here
+      - ENV=development
+      - DATABASE_URL=postgresql://pinsense_user:pinsense_secure_pass_change_me@db:5432/pinsense_db
+      - MODEL_PATH=/app/models
+    volumes:
+      # Mount your code for live reloading during development
+      - ./backend:/app
+      # Mount models directory if it contains large files
+      - ./backend/models:/app/models:ro
+    networks:
+      - pinsense_network
+    # Restart if it crashes
+    restart: unless-stopped
+    # Wait for database to be ready
+    depends_on:
+      db:
+        condition: service_healthy
+
+  # Frontend Service
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: pinsense_frontend
+    ports:
+      - "3000:3000"
+    environment:
+      # Point frontend to backend API
+      - REACT_APP_API_URL=http://localhost:8000
+    volumes:
+      # Mount code for live reloading
+      - ./frontend:/app
+      # Don't mount node_modules (use container's version)
+      - /app/node_modules
+    networks:
+      - pinsense_network
+    restart: unless-stopped
+    # Wait for backend to be ready
+    depends_on:
+      - backend
+
+  # PostgreSQL Database
+  db:
+    image: postgres:15-alpine
+    container_name: pinsense_db
+    environment:
+      POSTGRES_USER: pinsense_user
+      POSTGRES_PASSWORD: pinsense_secure_pass_change_me
+      POSTGRES_DB: pinsense_db
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./backend/init.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - pinsense_network
+    ports:
+      - "5432:5432"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U pinsense_user -d pinsense_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+networks:
+  pinsense_network:
+    driver: bridge
+
+volumes:
+  postgres_data:
