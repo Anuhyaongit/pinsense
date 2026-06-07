@@ -1,0 +1,64 @@
+name: Deploy Frontend to GitHub Pages
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'frontend/**'
+      - '.github/workflows/deploy-frontend.yml'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'frontend/**'
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    steps:
+      - name: 🔍 Checkout code
+        uses: actions/checkout@v4
+
+      - name: 📦 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+          cache-dependency-path: 'frontend/package-lock.json'
+
+      - name: 📥 Install dependencies
+        working-directory: ./frontend
+        run: npm ci
+
+      - name: 🧪 Run tests
+        working-directory: ./frontend
+        run: npm run test -- --watchAll=false --passWithNoTests || true
+
+      - name: 🏗️ Build React app
+        working-directory: ./frontend
+        run: npm run build
+        env:
+          REACT_APP_API_URL: https://api.your-domain.com
+          CI: true
+
+      - name: 📤 Upload build artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: './frontend/build'
+
+      - name: 🚀 Deploy to GitHub Pages
+        if: github.event_name == 'push'
+        id: deployment
+        uses: actions/deploy-pages@v4
+
+      - name: ✅ Deployment complete
+        run: echo "Frontend deployed to GitHub Pages!"

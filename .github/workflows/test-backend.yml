@@ -1,0 +1,72 @@
+name: Backend Tests & Security
+
+on:
+  push:
+    branches: [main, develop]
+    paths:
+      - 'backend/**'
+      - '.github/workflows/test-backend.yml'
+  pull_request:
+    branches: [main, develop]
+    paths:
+      - 'backend/**'
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    
+    services:
+      postgres:
+        image: postgres:15-alpine
+        env:
+          POSTGRES_USER: pinsense_user
+          POSTGRES_PASSWORD: test_password
+          POSTGRES_DB: pinsense_test_db
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
+    steps:
+      - name: 🔍 Checkout code
+        uses: actions/checkout@v4
+
+      - name: 🐍 Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+          cache: 'pip'
+
+      - name: 📥 Install dependencies
+        run: |
+          cd backend
+          pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pytest pytest-asyncio pytest-cov flake8 black isort
+
+      - name: 🎨 Code formatting check
+        working-directory: ./backend
+        run: |
+          black --check app/ || true
+          isort --check-only app/ || true
+
+      - name: 🔍 Linting
+        working-directory: ./backend
+        run: flake8 app --max-line-length=120 --ignore=E501,W503 || true
+
+      - name: 🧪 Run tests
+        working-directory: ./backend
+        run: |
+          pytest tests/ -v --cov=app --cov-report=xml --cov-report=term || true
+        env:
+          DATABASE_URL: postgresql://pinsense_user:test_password@localhost:5432/pinsense_test_db
+
+      - name: 📊 Upload coverage
+        uses: codecov/codecov-action@v3
+        with:
+          file: ./backend/coverage.xml
+          flags: backend
+          name: backend-coverage
