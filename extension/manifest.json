@@ -1,0 +1,27 @@
+{
+  "manifest_version": 3,
+  "name": "PinSense",
+  "version": "1.0",
+  "description": "Add pins to PinSense from Pinterest with one click",
+  "permissions": [
+    "contextMenus",
+    "scripting"
+  ],
+  "host_permissions": [
+    "https://pinterest.com/*",
+    "https://www.pinterest.com/*",
+    "http://localhost:8000/*"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "PinSense"
+  },
+  "icons": {
+    "16": "images/icon16.png",
+    "48": "images/icon48.png",
+    "128": "images/icon128.png"
+  }
+}
