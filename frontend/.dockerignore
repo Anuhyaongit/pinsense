@@ -1,0 +1,14 @@
+# Files to ignore when building Docker image
+node_modules
+npm-debug.log
+build
+dist
+.git
+.gitignore
+.env
+.env.local
+*.log
+.DS_Store
+coverage
+.idea
+.vscode
